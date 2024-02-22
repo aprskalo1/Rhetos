@@ -1,0 +1,44 @@
+Module Bookstore
+{
+    Polymorphic ShipmentEvent
+    {
+        DateTime EffectiveSince;
+        Reference Shipment;
+        Reference NewStatus Bookstore.ShipmentStatus;
+    }
+
+    Entity ApproveShipment
+    {
+        DateTime EffectiveSince { CreationTime; }
+        Reference Shipment;
+
+        LongString Explanation { Required; }
+
+        Is Bookstore.ShipmentEvent
+        {
+            Implements Bookstore.ShipmentEvent.NewStatus Bookstore.ShipmentStatus.Approved;
+        }
+    }
+
+    Entity DeliveryStarted
+    {
+        DateTime EffectiveSince { CreationTime; }
+        Reference Shipment;
+
+        Is Bookstore.ShipmentEvent
+        {            
+            Implements Bookstore.ShipmentEvent.NewStatus Bookstore.ShipmentStatus.DeliveryInProgress;
+        }
+    }
+
+    Entity DeliveryFinished
+    {
+        DateTime EffectiveSince { CreationTime; }
+        Reference Shipment;
+
+        Is Bookstore.ShipmentEvent
+        {            
+            Implements Bookstore.ShipmentEvent.NewStatus Bookstore.ShipmentStatus.Delivered;
+        }
+    }
+}

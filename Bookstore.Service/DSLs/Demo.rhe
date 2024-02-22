@@ -1,0 +1,7 @@
+Module Demo
+{
+	Entity E
+	{
+		ShortString B;
+	}
+}

@@ -1,0 +1,223 @@
+﻿//primjer flat pristupa bey namespace-a
+
+/*
+Module Bookstore;
+Entity Bookstore.Book;
+ShortString Bookstore.Book.Code { AutoCode; }
+ShortString Bookstore.Book.Title;
+Integer Bookstore.Book.NumberOfPages;
+
+ItemFilter Bookstore.Book.CommonMisspelling 'book => book.Title.Contains("curiousity")';
+InvalidData Bookstore.Book.CommonMisspelling 'It is not allowed to enter misspelled word "curiousity"';
+
+Entity Bookstore.Logging;
+*/
+
+Module Bookstore
+{
+    Entity Book
+    {
+        ShortString Code { AutoCode; Unique; }
+        ShortString BookName;
+        ShortString Title { Required; }
+        Reference Author Bookstore.Person;
+        Integer NumberOfPages;
+
+        ItemFilter CommonMisspelling 'book => book.Title.Contains("curiousity")';
+        InvalidData CommonMisspelling 'It is not allowed to enter misspelled word "curiousity"';
+
+        ComposableFilterBy LongBooks '(query, repository, parameter) =>
+            {
+                return query.Where(book => book.NumberOfPages > parameter.NumberOfPages);
+            }';
+
+        Reference AssignedTo Bookstore.Employee;    
+        
+        RowPermissions
+        {
+
+            AllowRead EveryoneCanRead 'context =>
+                {
+                    return book => book.AssignedTo.ID != null;
+                }';
+
+            AllowRead EveryoneCanRead2 'context =>
+                {
+                    return book => true;
+                }';
+
+            AllowRead EveryoneCanRead3 'context => book => true';
+
+            Allow OwnerCanWrite 'context =>
+                {
+                    Guid employeeId = context.Repository
+                        .Bookstore.Employee.Query()
+                        .Where(e => e.UserName == context.UserInfo.UserName)
+                        .Select( e => e.ID)
+                        .SingleOrDefault();
+                    return book => book.AssignedTo.ID == employeeId;
+                }';
+
+            AllowWrite OwnerCanWrite2 'context =>
+                {
+                    return book => book.AssignedTo.UserName == context.UserInfo.UserName;
+                }';
+        }
+
+        Logging { AllProperties; }
+    }
+
+    Entity Chapter
+    {
+        Reference Book { Detail; }
+        LongString Heading;
+    }
+
+    SqlView AllBooks <SQL\AllBooks.sql>
+    {
+        AutoDetectSqlDependencies;
+    }
+
+    Parameter LongBooks
+	{
+		Integer NumberOfPages;
+	}
+
+    Entity Person
+    {
+        ShortString Name;
+        ShortString VATNumber { Unique; Required; AutoCode;}
+    }
+
+
+    Entity Employee
+    {
+        ShortString UserName;
+        ShortString Name;
+        ShortString VATNumber { Unique; }
+        DateTime Created { CreationTime; }
+
+        PhoneNumber Phone;
+
+        Logging { AllProperties; }
+    }
+
+    Entity BookAuthor
+    {
+        Reference Book Bookstore.Book;
+        Reference Author Bookstore.Person;
+
+        Logging { AllProperties; }
+    }
+
+    Entity Manager
+    {
+         ShortString Bonuses;
+         Extends Bookstore.Employee;
+    }
+
+    Entity EducationRecord
+    {
+        DateTime Date { CreationTime; }
+        ShortString Description;
+    }
+
+    Entity Department
+    {
+        ShortString Code { Unique; Required; }
+        LongString Description;
+
+        Deactivatable;
+    }
+
+    Entity EmployeeDepartment
+    {
+        Reference Employee { Detail; }
+        Reference Department { Detail; }
+
+        UniqueMultiple 'Employee Department';
+
+        Logging { AllProperties; }
+    }
+
+    Entity Comment
+    {
+        LongString Text;
+        Reference Book { Detail; }
+
+        RowPermissions
+        {
+            AllowRead EveryoneCanRead 'context =>
+                {
+                    return comment => comment.Book.AssignedTo.ID != null;
+                }';
+
+            Allow OwnerCanWrite 'context =>
+                {
+                    Guid employeeId = context.Repository
+                        .Bookstore.Employee.Query()
+                        .Where(e => e.UserName == context.UserInfo.UserName)
+                        .Select(e => e.ID)
+                        .SingleOrDefault();
+
+                    return comment => comment.Book.AssignedTo.ID == employeeId;
+                }';
+
+            InheritFrom Bookstore.Comment.Book;
+        }
+    }
+
+    AutoInheritRowPermissions;
+
+    Entity Topic
+    {
+        ShortString Name { Unique; Required; }
+    }
+
+    Entity BookTopic
+    {
+        Reference Book { Detail; }
+        Reference Topic { Required; }
+
+        Logging { AllProperties; }
+    }
+
+    Action CreateBooks
+        '(parameter, repository, userInfo) => 
+        {
+            for (int i = 0; i < parameter.NumberOfBooks; i++)
+            {
+                var book = new Bookstore.Book
+                {
+                    Title = parameter.Title,
+                    BookName = parameter.BookName
+                };
+                repository.Bookstore.Book.Insert(book);
+            }
+        }'
+    {
+        Integer NumberOfBooks;
+        ShortString Title;
+        ShortString BookName;
+    }
+
+    /*
+    SqlQueryable BookWithoutNamesCount
+        "
+            CREATE VIEW Bookstore.BookWithoutNamesCount AS 
+            SELECT COUNT(*) AS NumberOfBooks FROM Bookstore.Book WHERE Title IS NULL OR Title = ''
+        "
+	{
+        Extends Bookstore.Book;
+        Integer NumberOfBooks;
+        AutodetectSqlDependencies;
+    }
+
+    Browse BookList Bookstore.Book
+    {
+        Take Code;
+        Take Title;
+        Take NumberOfPages;
+        Take NumberOfBooks 'Extension_BookWithoutNamesCount.NumberOfBooks';
+    }*/
+}

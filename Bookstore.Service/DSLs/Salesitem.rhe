@@ -1,0 +1,47 @@
+Module Bookstore
+{    
+    Polymorphic SalesItem
+    {
+        ShortString Code;
+        Money Price;
+        ShortString Description;
+    }
+
+    Entity Food
+    {
+        ShortString Code { AutoCode; DefaultValue 'item => "F+++"'; }
+        Money Price { Required; }
+        ShortString Description;
+        Integer Calories;
+
+        Is Bookstore.SalesItem;
+    }
+
+    Entity Book
+    {
+        ShortString Code { AutoCode; DefaultValue 'item => "B+++"'; }
+        Money Price; 
+        ShortString Title { Required; }
+        Integer NumberOfPages;
+
+        Is Bookstore.SalesItem
+        {
+            Implements Bookstore.SalesItem.Description "Title + ISNULL(', ' + (SELECT Name FROM Bookstore.Person WHERE ID = Bookstore.Book.AuthorID), '')";
+                
+            Where 'Price IS NOT NULL';
+        }
+    }
+
+    Browse SalesItemGrid Bookstore.SalesItem
+    {
+        Take Code;
+        Take Price;
+        Take 'Book.NumberOfPages';
+    }
+
+    Entity SalesItemComment
+    {
+        Reference SalesItem { Detail; }
+        LongString Comment;
+    }
+}

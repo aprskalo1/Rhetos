@@ -1,0 +1,37 @@
+Module Bookstore
+{
+    Hardcoded ShipmentStatus
+    {
+        Entry Preparing;
+        Entry Approved;
+        Entry DeliveryInProgress;
+        Entry Delivered;
+    }
+
+    SqlQueryable ComputeShipmentCurrentState <SQL\ComputeShipmentCurrentState.sql>
+    {
+        Extends Bookstore.Shipment;
+        Reference Status Bookstore.ShipmentStatus; // Preparing => Approved => DeliveryInProgress => Delivered.
+
+        // ChangesOnChangedItems Bookstore.ApproveShipment
+        //     'Guid[]'
+        //     'changedItems => changedItems
+        //         .Select(item => item.ShipmentID.Value)
+        //         .ToArray()';
+
+        ChangesOnLinkedItems Bookstore.ApproveShipment.Shipment;
+        ChangesOnLinkedItems Bookstore.DeliveryStarted.Shipment;
+        ChangesOnLinkedItems Bookstore.DeliveryFinished.Shipment;
+
+        AutodetectSqlDependencies;
+    }
+
+    Entity ShipmentCurrentState
+    {
+        ComputedFrom Bookstore.ComputeShipmentCurrentState
+        {
+            KeepSynchronized;
+            AllProperties;
+        }
+    }
+}

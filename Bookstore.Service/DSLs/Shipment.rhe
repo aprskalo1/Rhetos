@@ -1,0 +1,30 @@
+Module Bookstore
+{
+    Entity Shipment
+    {
+        ShortString TargetAddress;
+        DateTime DeliveryDate;
+        DateTime CreatedAt { CreationTime; }
+
+        Is Bookstore.ShipmentEvent 'Creating'
+        {
+            Implements Bookstore.ShipmentEvent.EffectiveSince "CreatedAt";
+            Implements Bookstore.ShipmentEvent.Shipment "ID";
+            Implements Bookstore.ShipmentEvent.NewStatus Bookstore.ShipmentStatus.Preparing;
+            // Note: "Implements" can contain custom SQL code, or a reference to hardcoded entry (see ShipmentStatus).
+        }
+    }
+
+    Entity ShipmentItem
+    {
+        Reference Shipment { Detail; }
+        Reference Book;
+    }
+
+    Browse ShipmentGrid Bookstore.Shipment
+    {
+        Take TargetAddress;
+        Take DeliveryDate;
+        Take CurrentStatus 'Extension_ShipmentCurrentState.Status.Name';
+    }
+}
